@@ -6,7 +6,7 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = "~> 5.0"
+      version = "~> 8.0"
     }
   }
 }
@@ -73,16 +73,16 @@ resource "oci_core_volume" "block_volumes" {
 
 # 3. Start an instance using the boot volume
 resource "oci_core_instance" "main_instance" {
-  compartment_id        = var.compartment_ocid
-  availability_domain   = var.availability_domain_name
-  display_name          = var.instance_display_name
-  shape                 = var.instance_shape
+  compartment_id      = var.compartment_ocid
+  availability_domain = var.availability_domain_name
+  display_name        = var.instance_display_name
+  shape               = var.instance_shape
 
   create_vnic_details {
-    subnet_id              = var.subnet_ocid
-    assign_public_ip       = true
-    display_name           = "${var.instance_display_name}-vnic"
-    hostname_label         = "${replace(lower(var.instance_display_name), "/[^a-z0-9-]/", "")}"
+    subnet_id        = var.subnet_ocid
+    assign_public_ip = true
+    display_name     = "${var.instance_display_name}-vnic"
+    hostname_label   = replace(lower(var.instance_display_name), "/[^a-z0-9-]/", "")
   }
 
   source_details {

@@ -5,7 +5,7 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci" # Explicitly use the Oracle-maintained provider
-      version = "~> 5.0"     # Specify a compatible version range, e.g., "5.47.0"
+      version = "~> 8.0"     # Keep current OCI provider compatibility within v8.
     }
   }
 }
