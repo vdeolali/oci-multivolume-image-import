@@ -1,5 +1,7 @@
 # This file configures the OCI provider for the root module.
-# OCI credentials are read from variables declared in variables.tf.
+# Resource Manager supplies its own workload identity. The optional credential
+# variables are retained only for customers who run the same configuration
+# locally with Terraform.
 
 terraform {
   required_providers {
@@ -15,5 +17,5 @@ provider "oci" { # This is the default 'oci' provider
   user_ocid        = var.oci_user_ocid
   private_key_path = var.oci_private_key_path
   fingerprint      = var.oci_fingerprint
-  region           = var.oci_region
+  region           = coalesce(var.region, var.oci_region)
 }

@@ -24,3 +24,8 @@ output "block_volume_image_ids" {
   description = "A map of image keys to OCIDs for the created block volume images."
   value       = { for k, v in oci_core_image.block_volume_images : k => v.id }
 }
+
+output "block_volume_attachment_ids" {
+  description = "A map of data-volume keys to attachment OCIDs."
+  value       = { for k, v in oci_core_volume_attachment.block_volume_attachments : k => v.id }
+}

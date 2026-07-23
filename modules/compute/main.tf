@@ -28,27 +28,29 @@ resource "oci_core_image" "boot_image" {
   }
 }
 
-# Create a non-sensitive map for iterating over block volume PARs
+# Keep stable, user-chosen names for every data disk. The legacy list is kept
+# temporarily so existing configurations remain usable.
 locals {
-  block_volume_inputs = {
-    for url in var.block_volume_par_urls :
-    replace(
-      lower(
-        split("/", url)[length(split("/", url)) - 1]
-      ),
-      ".", "-"
-    ) => url
+  legacy_block_volumes = {
+    for index, par_url in var.block_volume_par_urls :
+    format("data-%02d", index + 1) => {
+      par_url      = par_url
+      display_name = null
+      size_in_gbs  = null
+    }
   }
+
+  block_volumes = merge(local.legacy_block_volumes, var.block_volumes)
 }
 
 # Create custom images for each block volume from their respective PAR URLs.
 resource "oci_core_image" "block_volume_images" {
-  for_each       = local.block_volume_inputs
+  for_each       = local.block_volumes
   compartment_id = var.compartment_ocid
   display_name   = "${var.instance_display_name}-${each.key}-image"
 
   image_source_details {
-    source_uri  = each.value
+    source_uri  = each.value.par_url
     source_type = "objectStorageUri"
   }
 
@@ -62,8 +64,16 @@ resource "oci_core_volume" "block_volumes" {
   for_each            = oci_core_image.block_volume_images
   compartment_id      = var.compartment_ocid
   availability_domain = var.availability_domain_name
-  display_name        = "${var.instance_display_name}-${each.key}-volume"
-  size_in_gbs         = 100
+  display_name = coalesce(
+    try(local.block_volumes[each.key].display_name, null),
+    "${var.instance_display_name}-${each.key}-volume",
+  )
+  size_in_gbs = tostring(coalesce(
+    try(local.block_volumes[each.key].size_in_gbs, null),
+    ceil(tonumber(each.value.size_in_mbs) / 1024),
+  ))
+  vpus_per_gb = tostring(var.volume_vpus_per_gb)
+  kms_key_id  = var.volume_kms_key_id
 
   source_details {
     type = "image"
@@ -98,8 +108,10 @@ resource "oci_core_instance" "main_instance" {
 # 4. Mount the other downloaded volumes as block volume attachments of the instance
 resource "oci_core_volume_attachment" "block_volume_attachments" {
   for_each        = oci_core_volume.block_volumes
-  attachment_type = "iscsi"
+  attachment_type = var.data_volume_attachment_type
   instance_id     = oci_core_instance.main_instance.id
   volume_id       = each.value.id
   display_name    = "${var.instance_display_name}-${each.key}-attachment"
+  is_read_only    = false
+  is_shareable    = false
 }

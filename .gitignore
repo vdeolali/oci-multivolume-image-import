@@ -3,3 +3,9 @@
 *.tfstate.*
 crash.log
 *.tfplan
+customer.auto.tfvars
+prepared-ova/
+resource-manager-variables.json
+deploy-to-oci-url.txt
+environments/*.tfvars
+*.rsls

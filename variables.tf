@@ -2,32 +2,43 @@
 
 # OCI Provider Credentials (used by provider.tf)
 variable "oci_tenancy_ocid" {
-  description = "The OCID of your OCI tenancy."
+  description = "Local Terraform only: OCI tenancy OCID. Leave unset for Resource Manager."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "oci_user_ocid" {
-  description = "The OCID of the OCI user to authenticate with."
+  description = "Local Terraform only: OCI user OCID. Leave unset for Resource Manager."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "oci_private_key_path" {
-  description = "The path to the OCI API private key file."
+  description = "Local Terraform only: path to the OCI API private key. Leave unset for Resource Manager."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "oci_fingerprint" {
-  description = "The fingerprint of the OCI API private key."
+  description = "Local Terraform only: OCI API key fingerprint. Leave unset for Resource Manager."
   type        = string
   sensitive   = true
+  default     = null
 }
 
 variable "oci_region" {
-  description = "The OCI region to deploy resources in (e.g., 'us-ashburn-1')."
+  description = "Deprecated local Terraform region input. Prefer region."
   type        = string
+  default     = null
+}
+
+variable "region" {
+  description = "OCI region where Resource Manager runs the stack."
+  type        = string
+  default     = null
 }
 
 # Environment-specific variable to help differentiate resources
@@ -81,9 +92,46 @@ variable "boot_volume_par_url" {
   #sensitive   = true
 }
 
+variable "block_volumes" {
+  description = "Data disks to import. Map keys are stable disk names; values contain a read PAR URL and optional overrides."
+  type = map(object({
+    par_url      = string
+    display_name = optional(string)
+    size_in_gbs  = optional(number)
+  }))
+  default = {}
+}
+
 variable "block_volume_par_urls" {
-  description = "A list of PAR URLs for block volume image/data files in the vendor's object storage (4-10 PARs)."
+  description = "Deprecated compatibility input. Prefer block_volumes."
   type        = list(string)
   default     = []
-  # sensitive = true # This attribute is REMOVED per user's request.
+}
+
+variable "data_volume_attachment_type" {
+  description = "OCI attachment type for imported data volumes."
+  type        = string
+  default     = "paravirtualized"
+
+  validation {
+    condition     = contains(["paravirtualized", "iscsi"], var.data_volume_attachment_type)
+    error_message = "data_volume_attachment_type must be paravirtualized or iscsi."
+  }
+}
+
+variable "volume_vpus_per_gb" {
+  description = "VPUs per GB for imported data volumes."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.volume_vpus_per_gb > 0
+    error_message = "volume_vpus_per_gb must be greater than zero."
+  }
+}
+
+variable "volume_kms_key_id" {
+  description = "Optional KMS key OCID used to encrypt imported data volumes."
+  type        = string
+  default     = null
 }

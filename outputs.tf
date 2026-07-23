@@ -24,3 +24,8 @@ output "block_volume_image_ids" {
   description = "A map of image keys to OCIDs for the created block volume images."
   value       = module.compute.block_volume_image_ids
 }
+
+output "block_volume_attachment_ids" {
+  description = "A map of data-volume keys to attachment OCIDs."
+  value       = module.compute.block_volume_attachment_ids
+}

@@ -42,11 +42,51 @@ variable "boot_volume_par_url" {
   sensitive   = true
 }
 
-variable "block_volume_par_urls" {
-  description = "A list of PAR URLs for block volume image/data files in the vendor's object storage."
-  type        = list(string)
-  default     = []
-  # sensitive = true # This attribute is REMOVED per user's request.
+variable "block_volumes" {
+  description = "Data disks to import. Map keys are stable disk names; each value supplies a read PAR URL and optional volume overrides."
+  type = map(object({
+    par_url      = string
+    display_name = optional(string)
+    size_in_gbs  = optional(number)
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for volume in values(var.block_volumes) : try(volume.size_in_gbs == null || volume.size_in_gbs > 0, true)])
+    error_message = "When set, each block_volumes size_in_gbs value must be greater than zero."
+  }
 }
 
-# block_volume_count is removed from module variables
+variable "block_volume_par_urls" {
+  description = "Deprecated compatibility input. Prefer block_volumes, a map with stable names and optional capacity overrides."
+  type        = list(string)
+  default     = []
+}
+
+variable "data_volume_attachment_type" {
+  description = "OCI attachment type for imported data volumes."
+  type        = string
+  default     = "paravirtualized"
+
+  validation {
+    condition     = contains(["paravirtualized", "iscsi"], var.data_volume_attachment_type)
+    error_message = "data_volume_attachment_type must be paravirtualized or iscsi."
+  }
+}
+
+variable "volume_vpus_per_gb" {
+  description = "VPUs per GB for imported data volumes."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.volume_vpus_per_gb > 0
+    error_message = "volume_vpus_per_gb must be greater than zero."
+  }
+}
+
+variable "volume_kms_key_id" {
+  description = "Optional KMS key OCID used to encrypt imported data volumes."
+  type        = string
+  default     = null
+}
